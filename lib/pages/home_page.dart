@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:test_drive/pages/create_page.dart';
-import 'package:test_drive/pages/main_page.dart'; // veya flutter_secure_storage
+import 'package:test_drive/pages/main_page.dart';
+import 'package:test_drive/pages/profile_page.dart'; // veya flutter_secure_storage
 
 class HomePage extends StatefulWidget {
   @override
@@ -15,14 +16,14 @@ class _HomePageState extends State<HomePage> {
   final List<Widget> _pages = [
     MainPage(),
     CreatePage(),
-    ProfilesScreen(),
+    ProfilePage(),
   ];
 
   // Sayfa isimleri
   final List<String> _pageNames = [
     'Dashboard',
     'Create',
-    'Profiles',
+    'Profile',
   ];
 
   Future<bool> isLoggedIn() async {

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // veya flutter_secure_storage
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:test_drive/models/user_model.dart'; // veya flutter_secure_storage
+import 'dart:convert';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -14,6 +16,17 @@ class _LoginPageState extends State<LoginPage> {
     // Token'ı sakla
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('token', token);
+    User user = User(
+      id: "1",
+      name: "ismail akca",
+      email: "ismailakca399@gmail.com",
+      password: "123",
+      company: "Apple",
+      createdAt: DateTime(2024, 3, 25, 10, 15),
+      updatedAt: DateTime(2024, 3, 25, 10, 15),
+    );
+    String userJson = jsonEncode(user.toJson());
+    await prefs.setString("user", userJson);
     // Ana sayfaya yönlendir
     Navigator.pushReplacementNamed(context, '/home');
   }
