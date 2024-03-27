@@ -68,7 +68,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   BottomNavigationBarItem(
                     icon: Icon(Icons.person),
-                    label: 'Profiles',
+                    label: 'Profile',
                   ),
                 ],
               ),
@@ -82,24 +82,6 @@ class _HomePageState extends State<HomePage> {
           }
         }
       },
-    );
-  }
-}
-
-class CreateScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text('Create Screen'),
-    );
-  }
-}
-
-class ProfilesScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text('Profiles Screen'),
     );
   }
 }

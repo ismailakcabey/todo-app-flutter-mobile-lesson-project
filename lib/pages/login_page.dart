@@ -10,25 +10,29 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   Future<void> login(BuildContext context) async {
-    // Backend'e istek yap, token al
-    String token =
-        await "asdasdadada"; // Token alma işlemini backend ile gerçekleştirin
-    // Token'ı sakla
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('token', token);
-    User user = User(
-      id: "1",
-      name: "ismail akca",
-      email: "ismailakca399@gmail.com",
-      password: "123",
-      company: "Apple",
-      createdAt: DateTime(2024, 3, 25, 10, 15),
-      updatedAt: DateTime(2024, 3, 25, 10, 15),
-    );
-    String userJson = jsonEncode(user.toJson());
-    await prefs.setString("user", userJson);
-    // Ana sayfaya yönlendir
-    Navigator.pushReplacementNamed(context, '/home');
+    try {
+      // Backend'e istek yap, token al
+      String token =
+          await "asdasdadada"; // Token alma işlemini backend ile gerçekleştirin
+      // Token'ı sakla
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', token);
+      User user = User(
+        id: "1",
+        name: "ismail akca",
+        email: "ismailakca399@gmail.com",
+        password: "123",
+        company: "Apple",
+        createdAt: DateTime(2024, 3, 25, 10, 15),
+        updatedAt: DateTime(2024, 3, 25, 10, 15),
+      );
+      String userJson = jsonEncode(user.toJson());
+      await prefs.setString("user", userJson);
+      // Ana sayfaya yönlendir
+      Navigator.pushReplacementNamed(context, '/home');
+    } catch (e) {
+      print(e);
+    }
   }
 
   final TextEditingController emailController = TextEditingController();
