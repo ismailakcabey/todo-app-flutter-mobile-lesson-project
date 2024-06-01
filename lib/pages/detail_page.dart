@@ -1,22 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:test_drive/components/task_status_icon.dart';
 import 'package:test_drive/components/task_status_text.dart';
+import 'package:test_drive/database/todo_history_db.dart';
+import 'package:test_drive/database/user_db.dart';
 import 'package:test_drive/models/task_history_model.dart';
 import 'package:test_drive/models/task_model.dart';
 import 'package:test_drive/models/user_model.dart';
 import 'package:test_drive/enums/task_status_enum.dart'; // TaskStatus enumunu import edin
 
 class DetailPage extends StatefulWidget {
-  final String taskId;
-  Task? task;
+  int taskId;
+  Task task;
 
-  DetailPage({required this.taskId, this.task});
+  DetailPage({required this.taskId, required this.task});
 
   @override
   _DetailPageState createState() => _DetailPageState();
 }
 
 class _DetailPageState extends State<DetailPage> {
+  final userDB = UserDB();
+  final taskHistoryDB = TodoHistoryDB();
   @override
   void initState() {
     super.initState();
@@ -26,67 +30,21 @@ class _DetailPageState extends State<DetailPage> {
     loadTaskDetails();
   }
 
-  void loadTaskDetails() {
-    // Burada task detaylarının yüklenmesi işlemini gerçekleştirin
-    // Örneğin, bir API'den task detaylarını alabilirsiniz
-    // Bu örnekte, mevcut task verisini kullanacağız
+  Future<void> loadTaskDetails() async {
     if (widget.task == null) {
-      // Eğer task null ise, yükleme yapın
-      // Örneğin, widget.task'i bir API'den alınan veri ile doldurun
-      // Bu örnekte, varsayılan olarak örnek bir task oluşturacağız
+      // Eğer task null ise, varsayılan bir task oluşturun
+    } else {
+      // Task'ın yaratılan kullanıcısını alın
+      final user = await userDB.fetchById(widget.task.createdUserId);
+      // Yeni bir Task nesnesi oluşturup, createdUser'ı güncelleyin
+      final updatedTask = widget.task;
+      updatedTask.createdUser = user;
+      var taskHistory = await taskHistoryDB.fetchAll(widget.task!.id);
+      print(taskHistory);
+      // setState ile task'ı güncelleyin
       setState(() {
-        widget.task = Task(
-          id: '1',
-          createdUserId: '3',
-          taskStatus: TaskStatus.completed,
-          oldActionList: [
-            TaskHistory(
-                id: "1",
-                creadUserId: "1",
-                createdAt: DateTime(2024, 3, 25, 9, 0),
-                updatedAt: DateTime(2024, 3, 25, 9, 0),
-                description: "İsmail Akça changed status1"),
-            TaskHistory(
-                id: "1",
-                creadUserId: "1",
-                createdAt: DateTime(2024, 3, 25, 9, 0),
-                updatedAt: DateTime(2024, 3, 25, 9, 0),
-                description: "İsmail Akça changed status12"),
-            TaskHistory(
-                id: "1",
-                creadUserId: "1",
-                createdAt: DateTime(2024, 3, 25, 9, 0),
-                updatedAt: DateTime(2024, 3, 25, 9, 0),
-                description: "İsmail Akça changed status123"),
-            TaskHistory(
-                id: "1",
-                creadUserId: "1",
-                createdAt: DateTime(2024, 3, 25, 9, 0),
-                updatedAt: DateTime(2024, 3, 25, 9, 0),
-                description: "İsmail Akça changed status1234")
-          ],
-          updatedUserId: '2',
-          createdUser: User(
-              id: "1",
-              name: "ismail akca",
-              email: "ismailakca399@gmail.com",
-              password: "123",
-              company: "Apple",
-              createdAt: DateTime(2024, 3, 25, 10, 15),
-              updatedAt: DateTime(2024, 3, 25, 10, 15)),
-          updatedUser: User(
-              id: "1",
-              name: "metin yilmaz",
-              email: "metinyilmaz@gmail.com",
-              password: "123",
-              company: "Apple",
-              createdAt: DateTime(2024, 3, 25, 10, 15),
-              updatedAt: DateTime(2024, 3, 25, 10, 15)),
-          title: 'Meeting Agenda Preparation',
-          summary: 'Prepare agenda for the upcoming team meeting.',
-          createdAt: DateTime(2024, 3, 25, 9, 0),
-          updatedAt: DateTime(2024, 3, 25, 10, 30),
-        );
+        widget.task = updatedTask;
+        widget.task.oldActionList = taskHistory;
       });
     }
   }
@@ -167,7 +125,9 @@ class _DetailPageState extends State<DetailPage> {
                 height: 10,
               ),
               Text(
-                widget.task!.createdUser!.name,
+                widget.task.createdUser != null
+                    ? widget.task.createdUser!.name
+                    : "User not found ${widget.task.createdUser.toString()}",
                 textAlign: TextAlign.start,
                 style: TextStyle(
                     fontSize: 18,
@@ -205,7 +165,7 @@ class _DetailPageState extends State<DetailPage> {
                 height: 10,
               ),
               Column(
-                children: widget.task!.oldActionList.map((history) {
+                children: widget.task!.oldActionList!.map((history) {
                   return GestureDetector(
                     onTap: () {
                       // Tıklama işlemleri
@@ -213,8 +173,9 @@ class _DetailPageState extends State<DetailPage> {
                     child: Card(
                       child: ListTile(
                         title: Text(history.description),
-                        subtitle: Text(history.createdAt
-                            .toString()), // Örneğin createdAt'i gösteriyorum, sizin için uygun olanı kullanabilirsiniz.
+                        subtitle: Text(
+                          history.createdAt.toString(),
+                        ), // Örneğin createdAt'i gösteriyorum, sizin için uygun olanı kullanabilirsiniz.
                       ),
                     ),
                   );

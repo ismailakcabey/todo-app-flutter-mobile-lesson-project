@@ -1,15 +1,21 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:test_drive/components/custom_alert_dialog.dart';
 import 'package:test_drive/components/task_status_icon.dart';
 import 'package:test_drive/components/task_status_select.dart';
 import 'package:test_drive/components/task_status_text.dart';
+import 'package:test_drive/database/todo_db.dart';
+import 'package:test_drive/database/todo_history_db.dart';
+import 'package:test_drive/database/user_db.dart';
 import 'package:test_drive/models/task_history_model.dart';
 import 'package:test_drive/models/task_model.dart';
 import 'package:test_drive/models/user_model.dart';
 import 'package:test_drive/enums/task_status_enum.dart'; // TaskStatus enumunu import edin
+import 'package:shared_preferences/shared_preferences.dart';
 
 class UpdatePage extends StatefulWidget {
-  final String taskId;
+  final int taskId;
   Task? task;
 
   UpdatePage({required this.taskId, this.task});
@@ -28,96 +34,71 @@ class _UpdatePageState extends State<UpdatePage> {
     loadTaskUpdates();
   }
 
-  void loadTaskUpdates() {
-    // Burada task detaylarının yüklenmesi işlemini gerçekleştirin
-    // Örneğin, bir API'den task detaylarını alabilirsiniz
-    // Bu örnekte, mevcut task verisini kullanacağız
+  final userDB = UserDB();
+  final todoDB = TodoDB();
+  final todoHistoryDB = TodoHistoryDB();
+  int? selectedUserId;
+  List<User> users = [];
+  Future<void> loadTaskUpdates() async {
     if (widget.task == null) {
-      // Eğer task null ise, yükleme yapın
-      // Örneğin, widget.task'i bir API'den alınan veri ile doldurun
-      // Bu örnekte, varsayılan olarak örnek bir task oluşturacağız
-      setState(() {
-        widget.task = Task(
-          id: '1',
-          createdUserId: '3',
-          taskStatus: TaskStatus.completed,
-          oldActionList: [
-            TaskHistory(
-                id: "1",
-                creadUserId: "1",
-                createdAt: DateTime(2024, 3, 25, 9, 0),
-                updatedAt: DateTime(2024, 3, 25, 9, 0),
-                description: "İsmail Akça changed status1"),
-            TaskHistory(
-                id: "1",
-                creadUserId: "1",
-                createdAt: DateTime(2024, 3, 25, 9, 0),
-                updatedAt: DateTime(2024, 3, 25, 9, 0),
-                description: "İsmail Akça changed status12"),
-            TaskHistory(
-                id: "1",
-                creadUserId: "1",
-                createdAt: DateTime(2024, 3, 25, 9, 0),
-                updatedAt: DateTime(2024, 3, 25, 9, 0),
-                description: "İsmail Akça changed status123"),
-            TaskHistory(
-                id: "1",
-                creadUserId: "1",
-                createdAt: DateTime(2024, 3, 25, 9, 0),
-                updatedAt: DateTime(2024, 3, 25, 9, 0),
-                description: "İsmail Akça changed status1234")
-          ],
-          updatedUserId: '2',
-          createdUser: User(
-              id: "1",
-              name: "ismail akca",
-              email: "ismailakca399@gmail.com",
-              password: "123",
-              company: "Apple",
-              createdAt: DateTime(2024, 3, 25, 10, 15),
-              updatedAt: DateTime(2024, 3, 25, 10, 15)),
-          updatedUser: User(
-              id: "1",
-              name: "metin yilmaz",
-              email: "metinyilmaz@gmail.com",
-              password: "123",
-              company: "Apple",
-              createdAt: DateTime(2024, 3, 25, 10, 15),
-              updatedAt: DateTime(2024, 3, 25, 10, 15)),
-          title: 'Meeting Agenda Preparation',
-          summary: 'Prepare agenda for the upcoming team meeting.',
-          createdAt: DateTime(2024, 3, 25, 9, 0),
-          updatedAt: DateTime(2024, 3, 25, 10, 30),
-        );
-      });
+      // Eğer task null ise, varsayılan bir task oluşturun
     } else {
-      print(widget!.task!.title);
-      print(widget!.task!.summary);
-      print(widget!.task!.assignedUser!.name);
+      var fetchedUsers = await userDB.fetchAll();
+      final userData = await userDB.fetchById(widget.task!.assignedUserId);
       setState(() {
+        widget.task = widget.task;
+        users = fetchedUsers;
         taskTitleController.text = widget.task!.title;
         taskSummaryController.text = widget.task!.summary;
-        selectedUser = widget.task!.assignedUser!
-            .name; // Varsayılan atama, görevdeki atanmış kullanıcıya
-        selectedStatus =
-            widget.task!.taskStatus; // Varsayılan atama, görevin durumuna
+        selectedStatus = widget.task!.taskStatus == null
+            ? widget.task!.taskStatus
+            : TaskStatus.backlog;
+        selectedUserId = userData.id;
       });
     }
   }
 
   final TextEditingController taskTitleController = TextEditingController();
   final TextEditingController taskSummaryController = TextEditingController();
-  final List<String> users = [
-    'ismail akca',
-    'Ahmet Çetin',
-    'Mert aslan',
-    'Elon Musk'
-  ];
 
   TaskStatus selectedStatus = TaskStatus.backlog; // Varsayılan durum ataması
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  late String selectedUser;
   Future<void> update(BuildContext context) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? userJsonFromPrefs = prefs.getString("user");
+    Map<String, dynamic> userJson = json.decode(userJsonFromPrefs!);
+    await todoDB.update(
+        id: widget.task!.id,
+        title: taskTitleController.text,
+        summary: taskSummaryController.text,
+        assignedUserId: selectedUserId,
+        taskStatus: selectedStatus == null
+            ? TaskStatus.backlog.name
+            : selectedStatus.name,
+        updatedUserId: userJson["id"]);
+    var todos_history_text = "";
+    if (widget.task!.summary != taskSummaryController.text) {
+      todos_history_text = "changed task summary " +
+          widget.task!.summary +
+          "->" +
+          taskSummaryController.text;
+    }
+    if (widget.task!.title != taskTitleController.text) {
+      todos_history_text = "changed task title " +
+          widget.task!.title +
+          "->" +
+          taskTitleController.text;
+    }
+    if (widget.task!.taskStatus != selectedStatus) {
+      todos_history_text = "changed task status " +
+          widget.task!.taskStatus.toString() +
+          "->" +
+          selectedStatus.toString();
+    }
+    todoHistoryDB.create(
+        createdUserId: userJson["id"],
+        description: todos_history_text,
+        taskId: widget.task!.id);
     return showDialog<void>(
       context: context,
       builder: (BuildContext context) {
@@ -127,8 +108,7 @@ class _UpdatePageState extends State<UpdatePage> {
             children: <Widget>[
               Text('Task Title: ${taskTitleController.text}'),
               Text('Task Summary: ${taskSummaryController.text}'),
-              Text(
-                  'Assigned User: ${users.firstWhere((user) => user == selectedUser)}'),
+              Text('Assigned User: '),
               Text('Task Status: $selectedStatus'),
             ],
           ),
@@ -139,7 +119,6 @@ class _UpdatePageState extends State<UpdatePage> {
                 taskSummaryController.clear();
                 taskTitleController.clear();
                 selectedStatus = TaskStatus.backlog;
-                selectedUser = "";
                 Navigator.of(context).pop();
               },
             ),
@@ -149,7 +128,6 @@ class _UpdatePageState extends State<UpdatePage> {
                 taskSummaryController.clear();
                 taskTitleController.clear();
                 selectedStatus = TaskStatus.backlog;
-                selectedUser = "";
                 Navigator.of(context).pop();
               },
             ),
@@ -201,26 +179,27 @@ class _UpdatePageState extends State<UpdatePage> {
                       ),
                     ),
                     SizedBox(height: 10),
-                    DropdownButtonFormField<String>(
-                      value: selectedUser ?? users!.first,
+                    DropdownButtonFormField<int>(
+                      // `DropdownMenuItem`'ların `value`'sı `int`
                       decoration: InputDecoration(
-                        labelText: 'Assigned User',
-                        border: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.black, width: 1.0),
-                        ),
-                      ),
+                          // ... diğer kod
+                          ),
+                      value: selectedUserId, // `selectedUserId` kullanın
                       onChanged: (newValue) {
                         setState(() {
-                          selectedUser = newValue!;
+                          selectedUserId =
+                              newValue; // `selectedUserId`'yi güncelleyin
                         });
                       },
-                      items: users.map<DropdownMenuItem<String>>((String user) {
-                        return DropdownMenuItem<String>(
-                          value: user,
-                          child: Text(user),
-                        );
-                      }).toList(),
+                      items: users.isNotEmpty
+                          ? users.map<DropdownMenuItem<int>>((User user) {
+                              // `value`'yi `int` yapın
+                              return DropdownMenuItem<int>(
+                                value: user.id, // `User`'ın `id`'sini kullanın
+                                child: Text(user.name),
+                              );
+                            }).toList()
+                          : [],
                     ),
                     SizedBox(height: 10),
                     TaskStatusDropdown(
@@ -251,7 +230,7 @@ class _UpdatePageState extends State<UpdatePage> {
                 height: 10,
               ),
               Column(
-                children: widget.task!.oldActionList.map((history) {
+                children: widget.task!.oldActionList!.map((history) {
                   return GestureDetector(
                     onTap: () {
                       // Tıklama işlemleri

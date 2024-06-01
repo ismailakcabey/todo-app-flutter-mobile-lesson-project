@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // veya flutter_secure_storage
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:test_drive/components/custom_alert_dialog.dart';
+import 'package:test_drive/database/user_db.dart';
+import 'package:test_drive/models/user_model.dart'; // veya flutter_secure_storage
 
 class SignUpPage extends StatefulWidget {
   @override
@@ -7,8 +10,56 @@ class SignUpPage extends StatefulWidget {
 }
 
 class _SignUpPageState extends State<SignUpPage> {
+  Future<List<User>>? futureUsers;
+  final userDB = UserDB();
+
   Future<void> signUp(BuildContext context) async {
-    Navigator.pushReplacementNamed(context, '/');
+    String email = emailController.text;
+    final alreadyUser = await userDB.fetchByEmail(email);
+    print(alreadyUser);
+    if (alreadyUser == null) {
+      String name = nameController.text;
+      String password = passwordController.text;
+      print("Email: $email");
+      print("Name: $name");
+      print("Selected Company: $selectedCompany");
+      print("Password: $password");
+      userDB.create(
+          name: name,
+          email: email,
+          password: password,
+          company: selectedCompany);
+      Navigator.pushReplacementNamed(context, '/');
+    } else {
+      return showDialog<void>(
+        context: context,
+        builder: (BuildContext context) {
+          return CustomAlertDialog(
+            title: 'User Already Registered',
+            content: Text("User Already Registered $email"),
+            actions: <Widget>[
+              TextButton(
+                child: Text('Close'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+              TextButton(
+                child: Text('Ok'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
   }
 
   final TextEditingController emailController = TextEditingController();

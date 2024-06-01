@@ -40,6 +40,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   http: ^0.13.3
+  intl: ^0.17.0
+  sqflite: ^2.1.0+1
   shared_preferences: ^2.0.8
   flutter_secure_storage: ^4.2.0
 

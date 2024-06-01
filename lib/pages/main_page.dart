@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:test_drive/components/task_status_icon.dart';
+import 'package:test_drive/database/todo_db.dart';
 import 'package:test_drive/models/task_model.dart';
 import 'package:test_drive/mock/task_data.dart';
 import 'package:test_drive/pages/detail_page.dart';
@@ -13,6 +14,22 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   final TextEditingController titleController = TextEditingController();
+  List<Task> tasks = [];
+  final todoDB = TodoDB();
+  @override
+  void initState() {
+    super.initState();
+    fetchTasks(""); // Taskları yükle
+  }
+
+  Future<void> fetchTasks(String? title) async {
+    try {
+      var fetchedTodos = await todoDB.fetchAll(title);
+      setState(() {
+        tasks = fetchedTodos.map<Task>((task) => task).toList();
+      });
+    } catch (e) {}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +42,9 @@ class _MainPageState extends State<MainPage> {
               Padding(
                 padding: EdgeInsets.only(bottom: 10),
                 child: TextFormField(
+                  onChanged: (value) {
+                    fetchTasks(value); // Değer değiştiğinde fetchTasks'i çağır
+                  },
                   controller: titleController,
                   decoration: InputDecoration(
                     labelText: 'Search Title',
@@ -66,7 +86,7 @@ class _MainPageState extends State<MainPage> {
                                       UpdatePage(taskId: task.id, task: task),
                                 ),
                               );
-                              print("edit: " + task.id);
+                              print("edit: ${task.id}");
                             },
                           ),
                         ),

@@ -1,12 +1,12 @@
 // User sınıfı
 class User {
-  String id;
+  int id;
   String name;
   String email;
   String password;
   String company;
   DateTime createdAt;
-  DateTime updatedAt;
+  DateTime? updatedAt;
 
   User({
     required this.id,
@@ -15,7 +15,7 @@ class User {
     required this.password,
     required this.company,
     required this.createdAt,
-    required this.updatedAt,
+    this.updatedAt,
   });
 
   // JSON'dan User nesnesine dönüştürme metodu
@@ -31,6 +31,21 @@ class User {
     );
   }
 
+  // Map'den User nesnesine dönüştürme metodu
+  factory User.fromMap(Map<String, dynamic> map) {
+    return User(
+      id: map['id'],
+      name: map['name'],
+      email: map['email'],
+      password: map['password'],
+      company: map['company'],
+      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
+      updatedAt: map['updatedAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(map['updatedAt']!)
+          : null,
+    );
+  }
+
   // User nesnesini JSON formatına dönüştürme metodu
   Map<String, dynamic> toJson() {
     return {
@@ -40,7 +55,7 @@ class User {
       'password': password,
       'company': company,
       'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
+      'updatedAt': updatedAt!.toIso8601String(),
     };
   }
 }

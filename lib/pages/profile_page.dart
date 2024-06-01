@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:test_drive/components/custom_alert_dialog.dart';
+import 'package:test_drive/database/user_db.dart';
 import 'package:test_drive/models/user_model.dart'; // TaskStatus enumunu import edin
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -12,6 +13,7 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  final userDB = UserDB();
   @override
   void initState() {
     super.initState();
@@ -22,16 +24,16 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> loadTaskProfiles() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? userJsonFromPrefs = prefs.getString("user");
-
-    if (userJsonFromPrefs != null) {
+    Map<String, dynamic> userJson = json.decode(userJsonFromPrefs!);
+    if (userJson != null) {
       // JSON dizesini User nesnesine dönüştür
-      User retrievedUser = User.fromJson(jsonDecode(userJsonFromPrefs));
-      print(retrievedUser.name);
+      final currentUserData = await userDB.fetchById(userJson["id"]);
+      print(currentUserData);
       setState(() {
-        currentUser = retrievedUser;
-        userEmailController.text = retrievedUser.email;
-        userNameController.text = retrievedUser.name;
-        selectedCompany = retrievedUser.company;
+        currentUser = currentUserData;
+        userEmailController.text = currentUserData.email;
+        userNameController.text = currentUserData.name;
+        selectedCompany = currentUserData.company;
       });
       // Burada elde edilen User nesnesini kullanabilirsiniz
     }
@@ -49,6 +51,11 @@ class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController userEmailController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   Future<void> profile(BuildContext context) async {
+    final String name = userNameController.text;
+    final String email = userEmailController.text;
+    final String company = selectedCompany;
+    await userDB.update(
+        id: currentUser!.id, name: name, email: email, company: company);
     return showDialog<void>(
       context: context,
       builder: (BuildContext context) {
@@ -56,6 +63,7 @@ class _ProfilePageState extends State<ProfilePage> {
           title: 'Task Success Profiled',
           content: ListBody(
             children: <Widget>[
+              Text('User id: ${currentUser!.id}'),
               Text('User name: ${userNameController.text}'),
               Text('User email: ${userEmailController.text}'),
               Text('User company: ${selectedCompany}'),
